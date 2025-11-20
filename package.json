@@ -1,0 +1,8 @@
+{
+	"scripts": {
+    "dev": "concurrently \"pnpm --dir meeting-ai-backend dev\" \"pnpm --dir meeting-ai-frontend dev\""
+  },
+	"devDependencies": {
+		"concurrently": "^9.2.1"
+	}
+}

@@ -1,0 +1,3 @@
+packages:
+  - 'meeting-ai-backend'
+  - 'meeting-ai-frontend'
