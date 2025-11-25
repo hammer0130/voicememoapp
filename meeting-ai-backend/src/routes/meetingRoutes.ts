@@ -77,12 +77,10 @@ const memoryUpload = multer({
 });
 
 /**
- * 2) 유튜브 탭에서 바로 녹음한 음성 → Gemini 요약
- *
  * POST /api/meetings/summary/youtube
  * form-data:
  *   file: (audio blob -> File)
- *   videoUrl?: string   // 선택: 어떤 유튜브 영상인지
+ *   videoUrl?: string   // 선택: 사용자가 직접 입력한 유튜브 URL
  */
 router.post(
   '/summary/youtube',
@@ -111,7 +109,6 @@ router.post(
         source: 'youtube',
         videoUrl: videoUrl ?? null,
         file: {
-          // 디스크에 저장은 안 하지만, info 정도는 내려줘도 됨
           originalName: file.originalname,
           size: file.size,
           mimeType: file.mimetype,

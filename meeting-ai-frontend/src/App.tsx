@@ -1,10 +1,18 @@
-// import RecordAndUpload from './components/RecordAndUpload';
+import RecordAndUpload from './components/RecordAndUpload';
 import FileUpload from './components/FileUpload';
+import YoutubeRecordAndUpload from './components/YutubeRecordAndUpload';
+
 
 function App() {
 
 
-  return <FileUpload />;
+  return (
+    <>
+      <FileUpload />
+      <RecordAndUpload/>
+      <YoutubeRecordAndUpload/>
+    </>
+  )
 }
 
 export default App;

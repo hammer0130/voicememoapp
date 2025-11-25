@@ -29,7 +29,7 @@ function FileUpload() {
   // 업로드 핸들러
   const handleUpload = async () => {
     if (!file) {
-      setError('먼저 파일을 선택해주세요.');
+      setError('먼저 파일을 선택해주세요..');
       return;
     }
 
