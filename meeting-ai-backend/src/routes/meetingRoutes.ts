@@ -22,6 +22,51 @@ const upload = multer({
  * form-data:
  *   file: (audio file)
  */
+// router.post(
+//   '/summary/file',
+//   upload.single('file'),
+//   async (req, res) => {
+//     const file = req.file;
+
+//     if (!file) {
+//       return res.status(400).json({
+//         ok: false,
+//         message: 'form-data 에 "file" 필드로 오디오 파일을 첨부해주세요.',
+//       });
+//     }
+
+//     try {
+//       const result = await summarizeMeetingAudioFile(file.path, {
+//         source: 'upload',
+//         language: 'ko',
+//       });
+
+//       // 응답 보내기
+//       res.json({
+//         ok: true,
+//         file: {
+//           originalName: file.originalname,
+//           size: file.size,
+//           mimeType: file.mimetype,
+//         },
+//         summary: result.rawText,
+//       });
+//     } catch (err: any) {
+//       console.error('[summary/file] error:', err);
+
+//       res.status(500).json({
+//         ok: false,
+//         message: '오디오 요약 중 오류가 발생했습니다.',
+//         error: err?.message ?? String(err),
+//       });
+//     } finally {
+//       // 임시 파일 삭제 (에러 여부와 상관없이)
+//       if (file?.path) {
+//         fs.unlink(file.path, () => {});
+//       }
+//     }
+//   },
+// );
 router.post(
   '/summary/file',
   upload.single('file'),
@@ -36,12 +81,22 @@ router.post(
     }
 
     try {
-      const result = await summarizeMeetingAudioFile(file.path, {
-        source: 'upload',
-        language: 'ko',
+      // ✅ 1단계: 실제 STT/LLM 호출은 잠시 막고, 파일 정보만 찍어보기
+      console.log('[summary/file] uploaded file:', {
+        path: file.path,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
       });
 
-      // 응답 보내기
+      // ✅ 2단계: summarizeMeetingAudioFile 대신 임시 요약 리턴
+      const dummySummary = [
+        '이 기능은 아직 실제 STT/요약 API와 연결되지 않았습니다.',
+        `파일명: ${file.originalname}`,
+        `파일 크기: ${file.size} bytes`,
+        `MIME 타입: ${file.mimetype}`,
+      ].join('\n');
+
       res.json({
         ok: true,
         file: {
@@ -49,7 +104,7 @@ router.post(
           size: file.size,
           mimeType: file.mimetype,
         },
-        summary: result.rawText,
+        summary: dummySummary,
       });
     } catch (err: any) {
       console.error('[summary/file] error:', err);
@@ -60,13 +115,13 @@ router.post(
         error: err?.message ?? String(err),
       });
     } finally {
-      // 임시 파일 삭제 (에러 여부와 상관없이)
       if (file?.path) {
         fs.unlink(file.path, () => {});
       }
     }
   },
 );
+
 
 // 2) 🔥 유튜브 탭: 파일 저장 없이 메모리(Buffer)로 처리
 const memoryUpload = multer({
