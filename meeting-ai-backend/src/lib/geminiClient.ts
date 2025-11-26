@@ -153,12 +153,17 @@ export async function summarizeMeetingAudioFile(
 
   // audio + 텍스트를 함께 보냄 :contentReference[oaicite:0]{index=0}
   const contents = [
-    { text: systemInstruction },
     {
-      inlineData: {
-        mimeType,
-        data: base64Audio,
-      },
+      role: 'user',
+      parts: [
+        { text: systemInstruction },
+        {
+          inlineData: {
+            mimeType,
+            data: base64Audio,
+          },
+        },
+      ],
     },
   ];
   // gemini-2.5-flash, gemini-2.0-flash
@@ -207,12 +212,17 @@ export async function summarizeMeetingAudioBuffer(
   const base64Audio = audioBuffer.toString('base64');
 
   const contents = [
-    { text: systemInstruction },
     {
-      inlineData: {
-        mimeType,
-        data: base64Audio,
-      },
+      role: 'user',
+      parts: [
+        { text: systemInstruction },
+        {
+          inlineData: {
+            mimeType,
+            data: base64Audio,
+          },
+        },
+      ],
     },
   ];
 
