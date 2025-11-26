@@ -129,7 +129,7 @@ router.post(
 );
 
 router.post(
-  '/meetings/analyze',
+  '/analyze',
   upload.single('audio'), // audio 필드 1개
   async (req, res) => {
     if (!req.file) {
