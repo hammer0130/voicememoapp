@@ -4,6 +4,7 @@ import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
 import { summarizeMeetingAudioFile, summarizeMeetingAudioBuffer } from '../lib/geminiClient';
+import { transcribeLocalFile } from '../lib/googleStt';
 
 const router = Router();
 
@@ -67,61 +68,6 @@ router.post(
     }
   },
 );
-// router.post(
-//   '/summary/file',
-//   upload.single('file'),
-//   async (req, res) => {
-//     const file = req.file;
-
-//     if (!file) {
-//       return res.status(400).json({
-//         ok: false,
-//         message: 'form-data 에 "file" 필드로 오디오 파일을 첨부해주세요.',
-//       });
-//     }
-
-//     try {
-//       // ✅ 1단계: 실제 STT/LLM 호출은 잠시 막고, 파일 정보만 찍어보기
-//       console.log('[summary/file] uploaded file:', {
-//         path: file.path,
-//         originalName: file.originalname,
-//         size: file.size,
-//         mimetype: file.mimetype,
-//       });
-
-//       // ✅ 2단계: summarizeMeetingAudioFile 대신 임시 요약 리턴
-//       const dummySummary = [
-//         '이 기능은 아직 실제 STT/요약 API와 연결되지 않았습니다.',
-//         `파일명: ${file.originalname}`,
-//         `파일 크기: ${file.size} bytes`,
-//         `MIME 타입: ${file.mimetype}`,
-//       ].join('\n');
-
-//       res.json({
-//         ok: true,
-//         file: {
-//           originalName: file.originalname,
-//           size: file.size,
-//           mimeType: file.mimetype,
-//         },
-//         summary: dummySummary,
-//       });
-//     } catch (err: any) {
-//       console.error('[summary/file] error:', err);
-
-//       res.status(500).json({
-//         ok: false,
-//         message: '오디오 요약 중 오류가 발생했습니다.',
-//         error: err?.message ?? String(err),
-//       });
-//     } finally {
-//       if (file?.path) {
-//         fs.unlink(file.path, () => {});
-//       }
-//     }
-//   },
-// );
-
 
 // 2) 🔥 유튜브 탭: 파일 저장 없이 메모리(Buffer)로 처리
 const memoryUpload = multer({
@@ -177,6 +123,41 @@ router.post(
         ok: false,
         message: '유튜브 탭 음성 요약 중 오류가 발생했습니다.',
         error: err?.message ?? String(err),
+      });
+    }
+  },
+);
+
+router.post(
+  '/stt',
+  upload.single('audio'), // audio 필드 1개
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: 'audio 파일이 필요합니다.' });
+    }
+
+    const filePath = req.file.path;
+
+    try {
+      const text = await transcribeLocalFile(filePath);
+
+      // 임시 파일 삭제
+      fs.unlink(filePath, (err) => {
+        if (err) console.error('파일 삭제 실패:', err);
+      });
+
+      return res.json({ text });
+    } catch (err: any) {
+      console.error('Google STT 오류:', err);
+
+      // 파일 정리
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) console.error('파일 삭제 실패:', unlinkErr);
+      });
+
+      return res.status(500).json({
+        message: 'STT 변환 중 오류가 발생했습니다.',
+        error: err?.message,
       });
     }
   },

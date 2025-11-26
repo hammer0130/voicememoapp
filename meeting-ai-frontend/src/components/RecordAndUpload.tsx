@@ -83,12 +83,32 @@ const RecordAndUpload = () => {
     }
   };
 
-  const stopRecording = () => {
-    const mediaRecorder = mediaRecorderRef.current;
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+  const stopRecording = async () => {
+    // const mediaRecorder = mediaRecorderRef.current;
+    // if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
 
-    mediaRecorder.stop(); // onstop 핸들러가 자동 실행됨
+    // mediaRecorder.stop(); // onstop 핸들러가 자동 실행됨
+    // setRecording(false);
+
+
+    if (!chunksRef.current.length) return;
+
+    const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+    chunksRef.current = [];
+
+    const formData = new FormData();
+    formData.append('audio', blob, 'recording.webm');
+
+    const res = await fetch('http://localhost:3000/api/stt', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    console.log('STT result:', data.text);
     setRecording(false);
+    // mediaRecorder.stop();
+    
   };
 
   return (

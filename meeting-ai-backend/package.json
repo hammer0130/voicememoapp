@@ -1,5 +1,6 @@
 {
 	"dependencies": {
+		"@google-cloud/speech": "^7.2.1",
 		"@google/genai": "^1.30.0",
 		"cors": "^2.8.5",
 		"dotenv": "^17.2.3",
