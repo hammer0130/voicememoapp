@@ -8,6 +8,7 @@ import path from 'node:path';
 
 const apiKey = process.env.GEMINI_API_KEY;
 
+
 if (!apiKey) {
   console.warn(
     '[Gemini] GEMINI_API_KEY 환경 변수가 설정되지 않았습니다. .env 를 확인해주세요.',
@@ -17,6 +18,7 @@ if (!apiKey) {
 const ai = new GoogleGenAI({
   apiKey,
 });
+
 
 // 단순 요약 결과 타입 (필요하면 나중에 더 구조화해도 됨)
 export interface AudioSummaryResult {
@@ -245,3 +247,60 @@ export async function summarizeMeetingAudioBuffer(
   };
 }
 
+// ==================================================
+// 추가: STT(텍스트) 기반 회의 요약 함수
+// ==================================================
+export async function summarizeMeetingText(
+  transcript: string,
+  options?: {
+    source?: 'stt' | 'upload' | 'youtube' | 'recording';
+    language?: 'ko' | 'en';
+  },
+): Promise<AudioSummaryResult> {
+  const language = options?.language ?? 'ko';
+
+  const sourceLabel =
+    options?.source === 'youtube'
+      ? '유튜브에서 STT로 변환한 텍스트'
+      : options?.source === 'recording'
+      ? '브라우저에서 직접 녹음 후 STT로 변환한 텍스트'
+      : options?.source === 'upload'
+      ? '업로드한 음성 파일을 STT로 변환한 텍스트'
+      : 'STT로 변환된 회의 텍스트';
+
+  const systemInstruction = buildSystemInstruction(sourceLabel, language);
+
+  // STT로 변환된 "회의 전체 텍스트"를 하나의 user 메시지로 보냄
+  const contents = [
+    {
+      role: 'user',
+      parts: [
+        { text: systemInstruction },
+        {
+          text:
+            (language === 'ko'
+              ? '\n\n[회의 전체 텍스트]\n'
+              : '\n\n[Full meeting transcript]\n') + transcript,
+        },
+      ],
+    },
+  ];
+
+  const response = await withRetry(
+    () =>
+      ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents,
+      }),
+    { retries: 3, baseDelayMs: 1000 },
+  );
+
+  const text = response.text ?? '';
+  if (!text || !text.trim()) {
+    throw new Error('Gemini 요약 응답이 비어 있습니다.');
+  }
+
+  return {
+    rawText: text.trim(),
+  };
+}

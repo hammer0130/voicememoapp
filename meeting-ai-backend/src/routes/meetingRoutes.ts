@@ -3,7 +3,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
-import { summarizeMeetingAudioFile, summarizeMeetingAudioBuffer } from '../lib/geminiClient';
+import { summarizeMeetingAudioFile, summarizeMeetingAudioBuffer, summarizeMeetingText } from '../lib/geminiClient';
 import { transcribeLocalFile } from '../lib/googleStt';
 
 const router = Router();
@@ -129,7 +129,7 @@ router.post(
 );
 
 router.post(
-  '/stt',
+  '/meetings/analyze',
   upload.single('audio'), // audio 필드 1개
   async (req, res) => {
     if (!req.file) {
@@ -139,25 +139,35 @@ router.post(
     const filePath = req.file.path;
 
     try {
-      const text = await transcribeLocalFile(filePath);
+      // 1) STT: Google Speech-to-Text
+      const transcript = await transcribeLocalFile(filePath);
 
-      // 임시 파일 삭제
-      fs.unlink(filePath, (err) => {
-        if (err) console.error('파일 삭제 실패:', err);
+      if (!transcript || !transcript.trim()) {
+        throw new Error('STT 결과 텍스트가 비어 있습니다.');
+      }
+
+      // 2) LLM: Gemini로 요약
+      const summaryResult = await summarizeMeetingText(transcript, {
+        source: 'stt',
+        language: 'ko',
       });
 
-      return res.json({ text });
+      return res.json({
+        ok: true,
+        transcript,
+        summary: summaryResult.rawText,
+      });
     } catch (err: any) {
-      console.error('Google STT 오류:', err);
-
-      // 파일 정리
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr) console.error('파일 삭제 실패:', unlinkErr);
-      });
+      console.error('[meetings/analyze] error:', err);
 
       return res.status(500).json({
-        message: 'STT 변환 중 오류가 발생했습니다.',
+        ok: false,
+        message: '오디오 분석 중 오류가 발생했습니다.',
         error: err?.message,
+      });
+    } finally {
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) console.error('파일 삭제 실패:', unlinkErr);
       });
     }
   },

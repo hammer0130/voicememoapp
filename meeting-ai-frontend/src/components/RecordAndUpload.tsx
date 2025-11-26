@@ -48,7 +48,7 @@ const RecordAndUpload = () => {
           // ✅ 백엔드에서 기대하는 필드 이름: 'audio'
           formData.append('audio', blob, 'recording.webm');
 
-          const res = await fetch(`${API_URL}/api/meetings/stt`, {
+          const res = await fetch(`${API_URL}/api/meetings/analyze`, {
             method: 'POST',
             body: formData,
           });
