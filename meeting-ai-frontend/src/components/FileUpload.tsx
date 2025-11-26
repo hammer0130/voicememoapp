@@ -12,6 +12,8 @@ type SummaryResponse = {
   error?: string;
 };
 
+const API_URL = import.meta.env.VITE_API_URL
+
 function FileUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<SummaryResponse | null>(null);
@@ -42,7 +44,7 @@ function FileUpload() {
       formData.append('file', file);
 
       const response = await fetch(
-        'http://localhost:8000/api/meetings/summary/file',
+        `${API_URL}/api/meetings/summary/file`,
         {
           method: 'POST',
           body: formData,

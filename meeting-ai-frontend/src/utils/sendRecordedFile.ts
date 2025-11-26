@@ -1,11 +1,11 @@
-const API_URL = 'http://localhost:3000/api/meeting/summary/file';
+const API_URL = import.meta.env.VITE_API_URL
 
 const sendRecordedFile = async (file: File) => {
   const formData = new FormData();
   // ✅ 필드 이름을 백엔드와 동일하게 'file' 로!
   formData.append('file', file);
 
-  const res = await fetch(API_URL, {
+  const res = await fetch(`${API_URL}/api/meeting/summary/file`, {
     method: 'POST',
     body: formData,
   });

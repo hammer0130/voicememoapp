@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const RecordAndUpload = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -46,7 +48,7 @@ const RecordAndUpload = () => {
           // ✅ 백엔드에서 기대하는 필드 이름: 'audio'
           formData.append('audio', blob, 'recording.webm');
 
-          const res = await fetch('http://localhost:3000/api/stt', {
+          const res = await fetch(`${API_URL}/api/stt`, {
             method: 'POST',
             body: formData,
           });

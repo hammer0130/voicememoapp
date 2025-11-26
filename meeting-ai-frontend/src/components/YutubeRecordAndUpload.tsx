@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 
-const API_URL = 'http://localhost:8000/api/meetings/summary/youtube';
+const API_URL = import.meta.env.VITE_API_URL
 
 const YoutubeRecordAndUpload = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -8,32 +8,32 @@ const YoutubeRecordAndUpload = () => {
   const chunksRef = useRef<BlobPart[]>([]);
 
   const [recording, setRecording] = useState(false);
-  const [videoUrl, setVideoUrl] = useState('');
+  // const [videoUrl, setVideoUrl] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isYoutubeUrl = (url: string) => {
-    try {
-      const u = new URL(url);
-      return (
-        u.hostname.includes('youtube.com') ||
-        u.hostname.includes('youtu.be')
-      );
-    } catch {
-      return false;
-    }
-  };
+  // const isYoutubeUrl = (url: string) => {
+  //   try {
+  //     const u = new URL(url);
+  //     return (
+  //       u.hostname.includes('youtube.com') ||
+  //       u.hostname.includes('youtu.be')
+  //     );
+  //   } catch {
+  //     return false;
+  //   }
+  // };
 
   const startRecording = async () => {
     setError(null);
     setResult(null);
 
     // (선택) 유튜브 URL 형식만 체크
-    if (videoUrl && !isYoutubeUrl(videoUrl.trim())) {
-      setError('유효한 유튜브 주소가 아닙니다.');
-      return;
-    }
+    // if (videoUrl && !isYoutubeUrl(videoUrl.trim())) {
+    //   setError('유효한 유튜브 주소가 아닙니다.');
+    //   return;
+    // }
 
     if (
       !('mediaDevices' in navigator) ||
@@ -138,11 +138,11 @@ const YoutubeRecordAndUpload = () => {
 
       const formData = new FormData();
       formData.append('file', blob, 'youtube-audio.webm');
-      if (videoUrl.trim()) {
-        formData.append('videoUrl', videoUrl.trim());
-      }
+      // if (videoUrl.trim()) {
+      //   formData.append('videoUrl', videoUrl.trim());
+      // }
 
-      const res = await fetch(API_URL, {
+      const res = await fetch(`${API_URL}/api/meetings/summary/youtube`, {
         method: 'POST',
         body: formData,
       });
@@ -176,7 +176,7 @@ const YoutubeRecordAndUpload = () => {
         ※ 실제로 녹음되는 것은 오디오 트랙만이므로 파일 크기가 훨씬 작습니다.
       </p>
 
-      <div style={{ margin: '1rem 0' }}>
+      {/* <div style={{ margin: '1rem 0' }}>
         <label style={{ display: 'block', marginBottom: '0.25rem' }}>
           유튜브 영상 URL (선택)
         </label>
@@ -187,7 +187,7 @@ const YoutubeRecordAndUpload = () => {
           placeholder="https://www.youtube.com/watch?v=..."
           style={{ width: '100%', maxWidth: '480px', padding: '0.5rem' }}
         />
-      </div>
+      </div> */}
 
       <div style={{ marginBottom: '1rem' }}>
         {!recording ? (
