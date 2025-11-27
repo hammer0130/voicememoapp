@@ -16,7 +16,10 @@ app.use(express.urlencoded({ extended: true }));
 // CORS – 프론트 주소로 수정하면 됨 (Vite면 보통 5173)
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      'http://192.168.3.110:5173'
+    ],
   }),
 );
 

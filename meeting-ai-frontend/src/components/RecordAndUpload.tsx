@@ -18,7 +18,7 @@ const RecordAndUpload = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
+        mimeType: 'audio/webm;codecs=opus'
       });
 
       chunksRef.current = [];
