@@ -33,11 +33,14 @@ const RecordAndUpload = () => {
       mediaRecorder.onstop = async () => {
         // 여기서 blob 만들고 서버로 전송
         if (!chunksRef.current.length) {
-          console.warn('no chunks');
+          console.warn('[Record] no chunks collected');
           return;
         }
 
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+        console.log('[Record] blob size:', blob.size);
+
         chunksRef.current = [];
 
         setLoading(true);
@@ -59,7 +62,7 @@ const RecordAndUpload = () => {
           }
 
           const data = await res.json();
-          console.log('STT result:', data.text);
+          console.log('[Record] STT API response:', data.text);
           setResult(data.text ?? '(인식된 텍스트가 없습니다.)');
         } catch (e: any) {
           console.error(e);

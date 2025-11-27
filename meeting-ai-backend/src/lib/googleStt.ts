@@ -14,8 +14,8 @@ export async function transcribeLocalFile(filePath: string): Promise<string> {
   // 2) STT 설정
   const config = {
     // 브라우저 MediaRecorder 기본(WebM + Opus) 기준
-    encoding: 'WEBM_OPUS' as const,
-    sampleRateHertz: 48000,
+   // encoding: 'WEBM_OPUS' as const,
+    // sampleRateHertz: 48000,
     languageCode: 'ko-KR',
     enableAutomaticPunctuation: true, // 자동 문장부호
     // model: 'latest_long', // 길고 정확한 모델 쓰고 싶으면 (요금 조금 다를 수 있음)
@@ -26,13 +26,27 @@ export async function transcribeLocalFile(filePath: string): Promise<string> {
     config,
   };
 
+  console.log('[STT] sending recognize request...');
+
   // 3) STT 호출
   const [response] = await client.recognize(request);
+
+  console.log(
+    '[STT] raw response results length:',
+    response.results?.length ?? 0,
+  );
+
+  if (!response.results || response.results.length === 0) {
+    console.warn('[STT] no results in response');
+    return '';
+  }
 
   const transcription =
     response.results
       ?.map((r: any) => r.alternatives?.[0]?.transcript ?? '')
       .join('\n') ?? '';
+
+    console.log('[STT] transcription (first 200 chars):', transcription.slice(0, 200));
 
   return transcription;
 }

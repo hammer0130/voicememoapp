@@ -136,33 +136,35 @@ router.post(
       return res.status(400).json({ message: 'audio 파일이 필요합니다.' });
     }
 
+    console.log('[STT] uploaded file:', {
+      path: req.file.path,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      originalname: req.file.originalname,
+    });
+
     const filePath = req.file.path;
 
     try {
-      // 1) STT: Google Speech-to-Text
       const transcript = await transcribeLocalFile(filePath);
 
+      console.log('[STT] transcript:', JSON.stringify(transcript).slice(0, 200));
+
       if (!transcript || !transcript.trim()) {
-        throw new Error('STT 결과 텍스트가 비어 있습니다.');
+        // 에러로 던지지 말고 일단 응답으로 내려주게 바꿔도 됨
+        return res.status(200).json({
+          ok: false,
+          message: 'STT 결과 텍스트가 비어 있습니다.',
+          transcript,
+        });
       }
 
-      // 2) LLM: Gemini로 요약
-      const summaryResult = await summarizeMeetingText(transcript, {
-        source: 'stt',
-        language: 'ko',
-      });
-
-      return res.json({
-        ok: true,
-        transcript,
-        summary: summaryResult.rawText,
-      });
+      return res.json({ ok: true, text: transcript });
     } catch (err: any) {
-      console.error('[meetings/analyze] error:', err);
-
+      console.error('[STT] error:', err);
       return res.status(500).json({
         ok: false,
-        message: '오디오 분석 중 오류가 발생했습니다.',
+        message: 'STT 변환 중 오류가 발생했습니다.',
         error: err?.message,
       });
     } finally {
