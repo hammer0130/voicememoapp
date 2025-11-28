@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
+import { blobToBase64 } from '../utils/blobToBase64';
 
-const API_URL = import.meta.env.VITE_API_URL
+// const API_URL = import.meta.env.VITE_API_URL
 
 const YoutubeRecordAndUpload = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -136,15 +137,20 @@ const YoutubeRecordAndUpload = () => {
         return;
       }
 
-      const formData = new FormData();
-      formData.append('file', blob, 'youtube-audio.webm');
-      // if (videoUrl.trim()) {
-      //   formData.append('videoUrl', videoUrl.trim());
-      // }
+      // 파일을 base64로 변환
+      const audioBase64 = await blobToBase64(blob);
 
-      const res = await fetch(`${API_URL}/api/meetings/summary/youtube`, {
+      const res = await fetch(`/api/meetings/summary/youtube`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          audioBase64,
+          mimeType: blob.type || 'audio/webm',
+          originalName: 'youtube-audio.webm',
+          // videoUrl: videoUrl.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {

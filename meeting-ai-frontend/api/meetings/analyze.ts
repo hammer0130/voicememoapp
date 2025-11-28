@@ -1,6 +1,15 @@
 // frontend/api/meetings/analyze.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { transcribeAudioBuffer } from '../../lib/services/googleStt';
+import { transcribeAudioBuffer } from '../_lib/services/googleStt.js';
+
+// Vercel body parsing 설정
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

@@ -1,6 +1,15 @@
-// frontend/api/meetings/summary/youtube.ts
+// frontend/api/meetings/summary/file.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { summarizeMeetingAudioBuffer } from '../../../lib/services/geminiClient';
+import { summarizeMeetingAudioBuffer } from '../../_lib/services/geminiClient.js';
+
+// Vercel body parsing 설정
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -8,33 +17,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { audioBase64, mimeType, originalName, videoUrl } = req.body as {
+    const { audioBase64, mimeType, originalName } = req.body as {
       audioBase64?: string;
       mimeType?: string;
       originalName?: string;
-      videoUrl?: string;
     };
 
     if (!audioBase64) {
       return res.status(400).json({
         ok: false,
         message:
-          'audioBase64 필드가 필요합니다. (유튜브 탭에서 녹음한 오디오를 base64로 보내주세요)',
+          'audioBase64 필드가 필요합니다. (업로드한 파일을 base64로 인코딩해서 보내주세요)',
       });
     }
 
     const audioBuffer = Buffer.from(audioBase64, 'base64');
 
     const result = await summarizeMeetingAudioBuffer(audioBuffer, {
-      source: 'youtube',
+      source: 'upload',
       language: 'ko',
       mimeType: mimeType ?? 'audio/webm',
     });
 
     return res.status(200).json({
       ok: true,
-      source: 'youtube',
-      videoUrl: videoUrl ?? null,
       file: {
         originalName: originalName ?? null,
         mimeType: mimeType ?? null,
@@ -42,10 +48,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       summary: result.rawText,
     });
   } catch (err: any) {
-    console.error('[summary/youtube] error:', err);
+    console.error('[summary/file] error:', err);
     return res.status(500).json({
       ok: false,
-      message: '유튜브 탭 음성 요약 중 오류가 발생했습니다.',
+      message: '오디오 요약 중 오류가 발생했습니다.',
       error: err?.message ?? String(err),
     });
   }

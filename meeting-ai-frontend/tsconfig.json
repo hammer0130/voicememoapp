@@ -1,10 +1,19 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./tsconfig.app.json", "composite": true },
+    { "path": "./tsconfig.node.json", "composite": true }
   ],
   "compilerOptions": {
-    "types": ["node"]
-  }
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@lib/*": ["src/lib/*"],
+      "@types/*": ["src/types/*"],
+      "@stores/*": ["src/stores/*"]
+    },
+  },
+  "include": ["src", "api", "api/_lib"]
 }

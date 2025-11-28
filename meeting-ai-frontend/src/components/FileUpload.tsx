@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from 'react';
+import { blobToBase64 } from '../utils/blobToBase64';
 
 type SummaryResponse = {
   ok: boolean;
@@ -12,7 +13,7 @@ type SummaryResponse = {
   error?: string;
 };
 
-const API_URL = import.meta.env.VITE_API_URL
+// const API_URL = import.meta.env.VITE_API_URL
 
 function FileUpload() {
   const [file, setFile] = useState<File | null>(null);
@@ -40,14 +41,21 @@ function FileUpload() {
     setData(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // 파일을 base64로 변환
+      const audioBase64 = await blobToBase64(file);
 
       const response = await fetch(
-        `${API_URL}/api/meetings/summary/file`,
+        `/api/meetings/summary/file`,
         {
           method: 'POST',
-          body: formData,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            audioBase64,
+            mimeType: file.type || 'audio/webm',
+            originalName: file.name,
+          }),
         },
       );
 
