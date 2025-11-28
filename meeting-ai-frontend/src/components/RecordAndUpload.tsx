@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { blobToBase64 } from '../utils/blobToBase64'; // 경로는 프로젝트 구조에 맞게 수정
 
-export function RecordAndUpload() {
+function RecordAndUpload() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const [recording, setRecording] = useState(false);
@@ -102,3 +102,5 @@ export function RecordAndUpload() {
     </div>
   );
 }
+
+export default RecordAndUpload;
