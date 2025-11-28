@@ -1,119 +1,104 @@
 import { useRef, useState } from 'react';
+import { blobToBase64 } from '../utils/blobToBase64'; // 경로는 프로젝트 구조에 맞게 수정
 
-const API_URL = import.meta.env.VITE_API_URL
-
-const RecordAndUpload = () => {
+export function RecordAndUpload() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const [recording, setRecording] = useState(false);
-  const [result, setResult] = useState<string | null>(null); // 결과 텍스트
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ text?: string; summary?: string } | null>(
+    null,
+  );
 
-  const startRecording = async () => {
-    setError(null);
-    setResult(null);
-
+  // ✅ 1) 여기! 컴포넌트 안, 훅들 밑에 위치
+  const handleRecordingFinished = async (blob: Blob) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setLoading(true);
+      setResult(null);
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
+      const audioBase64 = await blobToBase64(blob);
+
+      const res = await fetch('/api/meetings/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audioBase64,
+          mimeType: blob.type,
+          originalName: 'recording.webm',
+        }),
       });
 
-      chunksRef.current = [];
-      mediaRecorderRef.current = mediaRecorder;
+      const data = await res.json();
+      // /api/meetings/analyze 에서 { ok, text } 형태로 응답한다고 가정
+      setResult({ text: data.text });
+    } catch (err) {
+      console.error('handleRecordingFinished error:', err);
+      alert('STT 처리 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
+  // ✅ 2) 녹음 시작
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = async () => {
-        // 여기서 blob 만들고 서버로 전송
-        if (!chunksRef.current.length) {
-          console.warn('[Record] no chunks collected');
-          return;
-        }
-
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-
-        console.log('[Record] blob size:', blob.size);
-
-        chunksRef.current = [];
-
-        setLoading(true);
-        setError(null);
-
-        try {
-          const formData = new FormData();
-          // ✅ 백엔드에서 기대하는 필드 이름: 'audio'
-          formData.append('audio', blob, 'recording.webm');
-
-          const res = await fetch(`${API_URL}/api/meetings/analyze`, {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || 'STT 요청 실패');
-          }
-
-          const data = await res.json();
-          console.log('[Record] STT API response:', data.text);
-          setResult(data.text ?? '(인식된 텍스트가 없습니다.)');
-        } catch (e: any) {
-          console.error(e);
-          setError(e?.message ?? '오디오 업로드 중 오류가 발생했습니다.');
-        } finally {
-          setLoading(false);
-          // 스트림 정리
-          stream.getTracks().forEach((t) => t.stop());
-        }
+        // ✅ 녹음이 끝난 시점에서 여기서 호출!
+        await handleRecordingFinished(blob);
+        // 스트림 정리
+        stream.getTracks().forEach((track) => track.stop());
       };
 
+      mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       setRecording(true);
-    } catch (e: any) {
-      console.error(e);
-      setError('마이크 접근 권한을 확인해주세요.');
+    } catch (err) {
+      console.error('녹음 시작 실패:', err);
+      alert('마이크 권한을 확인해주세요.');
     }
   };
 
+  // ✅ 3) 녹음 종료
   const stopRecording = () => {
-    const mediaRecorder = mediaRecorderRef.current;
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
-
-    // ❗ 이걸 호출해야 ondataavailable → onstop → 업로드 로직이 돈다
-    mediaRecorder.stop();
+    if (!mediaRecorderRef.current) return;
+    mediaRecorderRef.current.stop();
     setRecording(false);
   };
 
   return (
-    <div style={{ padding: '1.5rem' }}>
-      <h2>회의 녹음 테스트</h2>
-
+    <div style={{ padding: '1rem' }}>
       <div style={{ marginBottom: '1rem' }}>
         {!recording ? (
-          <button onClick={startRecording}>녹음 시작</button>
+          <button onClick={startRecording} disabled={loading}>
+            🎙️ 녹음 시작
+          </button>
         ) : (
-          <button onClick={stopRecording}>녹음 종료 &amp; 전송</button>
+          <button onClick={stopRecording} disabled={loading}>
+            ⏹ 녹음 종료
+          </button>
         )}
       </div>
 
-      {loading && <p>업로드/처리 중...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {loading && <p>처리 중입니다...</p>}
 
-      {result && (
-        <div style={{ marginTop: '1rem' }}>
+      {result?.text && (
+        <div>
           <h3>STT 결과</h3>
-          <p style={{ whiteSpace: 'pre-wrap' }}>{result}</p>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{result.text}</pre>
         </div>
       )}
     </div>
   );
-};
-
-export default RecordAndUpload;
+}
