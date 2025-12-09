@@ -11,7 +11,7 @@ export const config = {
   },
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function youtubeHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, message: 'Method not allowed' });
   }

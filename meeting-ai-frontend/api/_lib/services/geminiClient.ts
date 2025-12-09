@@ -126,7 +126,7 @@ export async function summarizeMeetingAudioBuffer(
   const response = await withRetry(
     () =>
       ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         contents,
       }),
     { retries: 3, baseDelayMs: 1000 },
@@ -183,7 +183,7 @@ export async function summarizeMeetingText(
   const response = await withRetry(
     () =>
       ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         contents,
       }),
     { retries: 3, baseDelayMs: 1000 },
